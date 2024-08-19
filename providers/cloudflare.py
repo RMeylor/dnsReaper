@@ -2,7 +2,6 @@ import CloudFlare
 import logging
 import time
 from domain import Domain
-from ratelimit import limits, sleep_and_retry
 
 
 description = "Scan multiple domains by fetching them from Cloudflare"
@@ -10,14 +9,11 @@ description = "Scan multiple domains by fetching them from Cloudflare"
 
 RATE_LIMIT = 600  # number of requests
 PERIOD = 300  # period in seconds
+REQUEST_INTERVAL = PERIOD / RATE_LIMIT  # interval between requests in seconds
 
 
-@sleep_and_retry
-@limits(calls=RATE_LIMIT, period=PERIOD)
 def get_records(client, zone_id):
     records = []
-
-
     page_number = 0
     while True:
         page_number += 1
@@ -38,6 +34,10 @@ def get_records(client, zone_id):
         total_pages = raw_results["result_info"]["total_pages"]
         if page_number == total_pages:
             break
+
+
+        # Wait to respect rate limit
+        time.sleep(REQUEST_INTERVAL)
 
 
     return records
@@ -68,12 +68,8 @@ def convert_records_to_domains(records):
         yield domain
 
 
-@sleep_and_retry
-@limits(calls=RATE_LIMIT, period=PERIOD)
 def get_zones(client):
     zones = []
-
-
     page_number = 0
     while True:
         page_number += 1
@@ -91,6 +87,10 @@ def get_zones(client):
         total_pages = raw_results["result_info"]["total_pages"]
         if page_number == total_pages:
             break
+
+
+        # Wait to respect rate limit
+        time.sleep(REQUEST_INTERVAL)
 
 
     logging.info(f"Got {len(zones)} zones ({total_pages} pages) from cloudflare")
