@@ -1,16 +1,27 @@
-import CloudFlare, logging
-
+import CloudFlare
+import logging
+import time
 from domain import Domain
+from ratelimit import limits, sleep_and_retry
+
 
 description = "Scan multiple domains by fetching them from Cloudflare"
 
 
+RATE_LIMIT = 600  # number of requests
+PERIOD = 300  # period in seconds
+
+
+@sleep_and_retry
+@limits(calls=RATE_LIMIT, period=PERIOD)
 def get_records(client, zone_id):
     records = []
+
 
     page_number = 0
     while True:
         page_number += 1
+
 
         # request the DNS records from that zone
         try:
@@ -20,11 +31,14 @@ def get_records(client, zone_id):
         except CloudFlare.exceptions.CloudFlareAPIError as e:
             exit(f"/zones/dns_records.get api call failed {e}")
 
+
         records.extend(raw_results["result"])
+
 
         total_pages = raw_results["result_info"]["total_pages"]
         if page_number == total_pages:
             break
+
 
     return records
 
@@ -32,12 +46,14 @@ def get_records(client, zone_id):
 def convert_records_to_domains(records):
     buf = {}
 
+
     for record in records:
         if record["name"] not in buf.keys():
             buf[record["name"]] = {}
         if record["type"] not in buf[record["name"]].keys():
             buf[record["name"]][record["type"]] = []
         buf[record["name"]][record["type"]].append(record["content"])
+
 
     for subdomain in buf.keys():
         domain = Domain(subdomain.rstrip("."), fetch_standard_records=False)
@@ -52,8 +68,11 @@ def convert_records_to_domains(records):
         yield domain
 
 
+@sleep_and_retry
+@limits(calls=RATE_LIMIT, period=PERIOD)
 def get_zones(client):
     zones = []
+
 
     page_number = 0
     while True:
@@ -65,22 +84,28 @@ def get_zones(client):
         except Exception as e:
             exit(f"/zones.get api call failed {e}")
 
+
         zones.extend(raw_results["result"])
+
 
         total_pages = raw_results["result_info"]["total_pages"]
         if page_number == total_pages:
             break
 
+
     logging.info(f"Got {len(zones)} zones ({total_pages} pages) from cloudflare")
+
 
     if len(zones) == 0:
         return []
+
 
     return zones
 
 
 def fetch_domains(cloudflare_token, **args):
     domains = []
+
 
     client = CloudFlare.CloudFlare(token=cloudflare_token, raw=True)
     zones = get_zones(client)
