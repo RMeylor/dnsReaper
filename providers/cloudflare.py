@@ -24,7 +24,7 @@ def get_records(client, zone_id):
             raw_results = client.zones.dns_records.get(
                 zone_id, params={"page": page_number}
             )
-            print(raw_results)
+            
         except CloudFlare.exceptions.CloudFlareAPIError as e:
             exit(f"/zones/dns_records.get api call failed {e}")
 
@@ -76,6 +76,7 @@ def get_zones(client):
         page_number += 1
         try:
             raw_results = client.zones.get(params={"page": page_number})
+            print(raw_results)
         except CloudFlare.exceptions.CloudFlareAPIError as e:
             exit(f"/zones.get api call failed {e}")
         except Exception as e:
