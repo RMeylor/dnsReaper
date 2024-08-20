@@ -37,7 +37,7 @@ def get_records(client, zone_id):
 
 
         # Wait to respect rate limit
-        time.sleep(REQUEST_INTERVAL)
+        # time.sleep(REQUEST_INTERVAL)
 
 
     return records
@@ -90,7 +90,7 @@ def get_zones(client):
 
 
         # Wait to respect rate limit
-        time.sleep(REQUEST_INTERVAL)
+        # time.sleep(REQUEST_INTERVAL)
 
 
     logging.info(f"Got {len(zones)} zones ({total_pages} pages) from cloudflare")
