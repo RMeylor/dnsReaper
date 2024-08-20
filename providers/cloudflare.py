@@ -7,7 +7,7 @@ from domain import Domain
 description = "Scan multiple domains by fetching them from Cloudflare"
 
 
-RATE_LIMIT = 600  # number of requests
+RATE_LIMIT = 900  # number of requests
 PERIOD = 300  # period in seconds
 REQUEST_INTERVAL = PERIOD / RATE_LIMIT  # interval between requests in seconds
 
